@@ -524,7 +524,6 @@
                   <div className="flex justify-between items-center">
                     <h1 className="text-2xl font-bold text-gray-800">Analisi Prezzi Fidia</h1>
                     <div className="flex gap-2 items-center">
-                      <span className="text-sm text-gray-600">Salvato su Google Sheets</span>
                       <button 
                         onClick={loadFromGoogleSheets} 
                         className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -713,7 +712,7 @@
                                     <td className="px-4 py-3" colSpan="3"></td>
                                   </tr>
                                   <tr className={`font-bold text-lg ${weightedMargin < 20 ? 'bg-red-100' : weightedMargin < 30 ? 'bg-yellow-100' : 'bg-green-100'}`}>
-                                    <td className="px-4 py-3">MARGINE MEDIO PONDERATO</td>
+                                    <td className="px-4 py-3">MARGINE MEDIO</td>
                                     <td className="px-4 py-3 text-right" colSpan="2"></td>
                                     <td className={`px-4 py-3 text-right ${weightedMargin < 20 ? 'text-red-600' : weightedMargin < 30 ? 'text-yellow-600' : 'text-green-600'}`}>
                                       {weightedMargin.toFixed(1)}%
