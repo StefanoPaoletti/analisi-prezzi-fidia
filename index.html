@@ -43,13 +43,13 @@
 
           const [invoiceDate, setInvoiceDate] = useState('');
           const [invoiceNumber, setInvoiceNumber] = useState('');
-          const [invoiceYear, setInvoiceYear] = useState('2025');
+          const [invoiceYear, setInvoiceYear] = useState(new Date().getFullYear().toString());
           const [shippingCost, setShippingCost] = useState('');
           const [invoiceItems, setInvoiceItems] = useState([
             { product: '', quantity: '', price: '', discount: '', vat: '10', freebies: '' }
           ]);
 
-          const [creditYear, setCreditYear] = useState('2025');
+          const [creditYear, setCreditYear] = useState(new Date().getFullYear().toString());
           const [creditAmount, setCreditAmount] = useState('');
           
           const [editingInvoice, setEditingInvoice] = useState(null);
