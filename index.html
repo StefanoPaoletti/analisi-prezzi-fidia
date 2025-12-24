@@ -27,12 +27,13 @@
         const YEARS = ['2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026'];
 
         const SHEET_ID = '1FvExAXdbcPeA3vowfpVm1D4IO68GYF4s5GpzesvAJu8';
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyMFbG28M5krjtDDGpoehvc-GKMlUvBXuW9pgGP8ba6SrrsZ-HK-HdFUWoY_6zwR3e1/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzOt_6UeUohNc6XzBksgEB3QVRNMlXNn8T3a_S3lu5euGmp-EQErmr7czoHrKj8krHR/exec';
 
         function App() {
           const [isAuthenticated, setIsAuthenticated] = useState(false);
           const [password, setPassword] = useState('');
           const [showPassword, setShowPassword] = useState(false);
+          const [savedPassword, setSavedPassword] = useState('');
           const [activeTab, setActiveTab] = useState('dashboard');
           const [invoices, setInvoices] = useState([]);
           const [creditNotes, setCreditNotes] = useState([]);
@@ -54,16 +55,26 @@
           const [editingInvoice, setEditingInvoice] = useState(null);
 
           useEffect(() => {
-            if (isAuthenticated) {
-              loadFromGoogleSheets();
+            const stored = localStorage.getItem('fidiaAppPassword');
+            if (stored) {
+              setSavedPassword(stored);
+              setIsAuthenticated(true);
+              loadFromGoogleSheets(stored);
             }
-          }, [isAuthenticated]);
+          }, []);
 
-          const loadFromGoogleSheets = async () => {
+          const loadFromGoogleSheets = async (pwd = savedPassword) => {
+            if (!pwd) return;
             setIsLoading(true);
             try {
-              const response = await fetch(SCRIPT_URL + '?password=' + encodeURIComponent('Fidia2026%'));
+              const response = await fetch(SCRIPT_URL + '?password=' + encodeURIComponent(pwd));
               const data = await response.json();
+              
+              if (data.error || data.success === false) {
+                alert('Password errata o problema di connessione. Riprova.');
+                handleLogout();
+                return;
+              }
               
               const invoiceMap = {};
               data.invoices.forEach(row => {
@@ -100,12 +111,13 @@
           };
 
           const saveToGoogleSheets = async (action, data) => {
+            if (!savedPassword) return false;
             setIsLoading(true);
             try {
               const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify({ 
-                  password: 'Fidia2026%',
+                  password: savedPassword,
                   action, 
                   ...data 
                 }),
@@ -126,11 +138,24 @@
           };
 
           const handleLogin = () => {
-            if (password === 'Fidia2026%') {
-              setIsAuthenticated(true);
-            } else {
-              alert('Password errata!');
+            if (!password) {
+              alert('Inserisci la password!');
+              return;
             }
+            localStorage.setItem('fidiaAppPassword', password);
+            setSavedPassword(password);
+            setIsAuthenticated(true);
+            loadFromGoogleSheets(password);
+          };
+
+          const handleLogout = () => {
+            localStorage.removeItem('fidiaAppPassword');
+            setSavedPassword('');
+            setIsAuthenticated(false);
+            setPassword('');
+            setInvoices([]);
+            setCreditNotes([]);
+            setOnlinePrices({});
           };
 
           const addInvoiceItem = () => {
@@ -500,6 +525,12 @@
                       >
                         📊 Apri Google Sheets
                       </a>
+                      <button
+                        onClick={handleLogout}
+                        className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        🚪 Logout
+                      </button>
                       <a 
                         href="https://app.netlify.com/"
                         target="_blank"
