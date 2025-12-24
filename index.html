@@ -38,7 +38,7 @@
           const [invoices, setInvoices] = useState([]);
           const [creditNotes, setCreditNotes] = useState([]);
           const [onlinePrices, setOnlinePrices] = useState({});
-          const [selectedYear, setSelectedYear] = useState('all');
+          const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
           const [isLoading, setIsLoading] = useState(false);
 
           const [invoiceDate, setInvoiceDate] = useState('');
