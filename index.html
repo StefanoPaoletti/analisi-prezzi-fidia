@@ -313,15 +313,37 @@
           const analysis = useMemo(() => {
             const result = {};
             
+            const filteredInvoices = selectedYear === 'all'
+              ? invoices
+              : invoices.filter(inv => String(inv.year) === selectedYear);
+            
+            // ✅ PRE-CALCOLO: Totale costi per anno (una volta sola!)
+            const totalCostByYear = {};
+            filteredInvoices.forEach(invoice => {
+              const year = String(invoice.year);
+              if (!totalCostByYear[year]) totalCostByYear[year] = 0;
+              
+              const totalPieces = invoice.items.reduce((sum, i) => sum + (parseFloat(i.quantity) || 0) + (parseFloat(i.freebies) || 0), 0);
+              const shipping = parseFloat(invoice.shippingCost) || 0;
+              
+              invoice.items.forEach(item => {
+                const qty = parseFloat(item.quantity) || 0;
+                const free = parseFloat(item.freebies) || 0;
+                const netPrice = parseFloat(item.priceNet || item.price) || 0;
+                const vat = parseFloat(item.vat) || 0;
+                const totalQty = qty + free;
+                const shippingShare = totalPieces > 0 ? (totalQty / totalPieces) * shipping : 0;
+                const priceWithVAT = qty * netPrice * (1 + vat / 100);
+                const shippingWithVAT = shippingShare * 1.22;
+                totalCostByYear[year] += priceWithVAT + shippingWithVAT;
+              });
+            });
+            
             PRODUCTS.forEach(product => {
               let totalCost = 0;
               let totalQuantity = 0;
               let yearCost = {};
               let yearQuantity = {};
-              
-              const filteredInvoices = selectedYear === 'all'
-                ? invoices
-                : invoices.filter(inv => String(inv.year) === selectedYear);
               
               filteredInvoices.forEach(invoice => {
                 const totalPieces = invoice.items.reduce((sum, i) => sum + (parseFloat(i.quantity) || 0) + (parseFloat(i.freebies) || 0), 0);
@@ -356,36 +378,10 @@
               
               relevantCredits.forEach(c => {
                 const creditYear = String(c.year);
-                if (yearCost[creditYear]) {
-                  // Calcola il totale speso nell'anno della nota di credito per TUTTI i prodotti
-                  let totalYearCost = 0;
-                  PRODUCTS.forEach(p => {
-                    filteredInvoices.forEach(invoice => {
-                      if (String(invoice.year) !== creditYear) return;
-                      
-                      const totalPieces = invoice.items.reduce((sum, i) => sum + (parseFloat(i.quantity) || 0) + (parseFloat(i.freebies) || 0), 0);
-                      const shipping = parseFloat(invoice.shippingCost) || 0;
-                      
-                      invoice.items.forEach(item => {
-                        if (item.product !== p) return;
-                        const qty = parseFloat(item.quantity) || 0;
-                        const free = parseFloat(item.freebies) || 0;
-                        const netPrice = parseFloat(item.priceNet || item.price) || 0;
-                        const vat = parseFloat(item.vat) || 0;
-                        const totalQty = qty + free;
-                        const shippingShare = totalPieces > 0 ? (totalQty / totalPieces) * shipping : 0;
-                        const priceWithVAT = qty * netPrice * (1 + vat / 100);
-                        const shippingWithVAT = shippingShare * 1.22;
-                        totalYearCost += priceWithVAT + shippingWithVAT;
-                      });
-                    });
-                  });
-                  
-                  // Distribuisci la nota di credito proporzionalmente
-                  if (totalYearCost > 0) {
-                    const prop = yearCost[creditYear] / totalYearCost;
-                    yearCost[creditYear] -= c.amount * prop;
-                  }
+                if (yearCost[creditYear] && totalCostByYear[creditYear]) {
+                  // ✅ Usa il pre-calcolo invece di ricalcolare!
+                  const prop = yearCost[creditYear] / totalCostByYear[creditYear];
+                  yearCost[creditYear] -= c.amount * prop;
                 }
               });
               
