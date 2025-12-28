@@ -778,7 +778,11 @@
                     <div className="bg-white rounded-lg shadow p-6">
                       <h2 className="text-2xl font-bold mb-4">Note di Credito ({creditNotes.length})</h2>
                       <div className="space-y-3">
-                        {creditNotes.slice().sort((a, b) => (b.date || b.year).localeCompare(a.date || a.year)).map(note => (
+                        {creditNotes.slice().sort((a, b) => {
+                          const dateA = a.date || String(a.year);
+                          const dateB = b.date || String(b.year);
+                          return dateB.localeCompare(dateA);
+                        }).map(note => (
                           <div key={note.id} className="border rounded-lg p-4 flex justify-between items-center hover:bg-gray-50">
                             <div className="font-medium text-lg">{note.date || note.year} - € {note.amount.toFixed(2)}</div>
                             <button onClick={() => deleteCreditNote(note.id)} disabled={isLoading} className="text-red-600 hover:text-red-800 text-2xl">🗑️</button>
