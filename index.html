@@ -126,28 +126,19 @@
             if (!savedPassword) return false;
             setIsLoading(true);
             try {
-              const response = await fetch(SCRIPT_URL, {
+              await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ password: savedPassword, action, ...payload })
+                body: JSON.stringify({ password: savedPassword, action, ...payload }),
+                mode: 'no-cors'
               });
               
-              const data = await response.json();
-              
-              if (!data.success) {
-                alert('Errore: ' + (data.error || 'Operazione fallita'));
-                setIsLoading(false);
-                return false;
-              }
-              
-              // Ricarica i dati dopo il salvataggio
+              // Con no-cors non possiamo leggere la risposta, quindi aspettiamo e ricarichiamo
+              await new Promise(r => setTimeout(r, 1500));
               await loadFromGoogleSheets();
               return true;
             } catch (error) {
               console.error(error);
-              alert('Errore di connessione: ' + error.message);
+              alert('Errore salvataggio: ' + error.message);
               setIsLoading(false);
               return false;
             }
