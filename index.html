@@ -122,7 +122,7 @@
             setIsLoading(false);
           };
           
-          const saveToGoogleSheets = async (action, payload) => {
+          const saveToGoogleSheets = async (action, payload, skipReload = false) => {
             if (!savedPassword) return false;
             setIsLoading(true);
             try {
@@ -132,9 +132,16 @@
                 mode: 'no-cors'
               });
               
-              // Con no-cors non possiamo leggere la risposta, quindi aspettiamo e ricarichiamo
+              // Con no-cors non possiamo leggere la risposta, quindi aspettiamo
               await new Promise(r => setTimeout(r, 1500));
-              await loadFromGoogleSheets();
+              
+              // Ricarica solo se non è un'azione con optimistic update
+              if (!skipReload) {
+                await loadFromGoogleSheets();
+              } else {
+                setIsLoading(false);
+              }
+              
               return true;
             } catch (error) {
               console.error(error);
@@ -242,7 +249,18 @@
           
           const deleteInvoice = async (id) => {
             if (!confirm('Eliminare definitivamente questa fattura?')) return;
-            await saveToGoogleSheets('deleteInvoice', { id });
+            
+            // Optimistic update: aggiorna UI immediatamente
+            const oldInvoices = [...invoices];
+            setInvoices(invoices.filter(inv => inv.id !== id));
+            
+            // Salva in background senza ricaricare (skipReload = true)
+            const success = await saveToGoogleSheets('deleteInvoice', { id }, true);
+            
+            // Se fallisce, ripristina
+            if (!success) {
+              setInvoices(oldInvoices);
+            }
           };
           
           const startEditInvoice = (invoice) => {
@@ -281,7 +299,18 @@
           
           const deleteCreditNote = async (id) => {
             if (!confirm('Eliminare questa nota di credito?')) return;
-            await saveToGoogleSheets('deleteCreditNote', { id });
+            
+            // Optimistic update: aggiorna UI immediatamente
+            const oldCreditNotes = [...creditNotes];
+            setCreditNotes(creditNotes.filter(note => note.id !== id));
+            
+            // Salva in background senza ricaricare (skipReload = true)
+            const success = await saveToGoogleSheets('deleteCreditNote', { id }, true);
+            
+            // Se fallisce, ripristina
+            if (!success) {
+              setCreditNotes(oldCreditNotes);
+            }
           };
           
           const handlePriceChange = (product, value) => {
