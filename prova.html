@@ -15,6 +15,9 @@
             color: white;
             box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
         }
+        .status-good { background: #d1fae5; color: #065f46; }
+        .status-ok { background: #fef3c7; color: #92400e; }
+        .status-bad { background: #fee2e2; color: #991b1b; }
     </style>
 </head>
 <body>
@@ -636,36 +639,38 @@
                       </div>
                       
                       {/* TABELLA PRODOTTI */}
-                      <div className="bg-white rounded-lg shadow overflow-hidden">
+                      <div className="bg-white rounded-xl shadow overflow-hidden">
                         <div className="overflow-x-auto">
-                          <table className="w-full text-sm sm:text-base">
-                            <thead className="bg-gray-100">
+                          <table className="w-full">
+                            <thead className="bg-gray-50 border-b">
                               <tr>
-                                <th className="px-3 sm:px-5 py-3 sm:py-4 text-left font-semibold whitespace-nowrap text-sm sm:text-base">Prodotto</th>
-                                <th className="px-3 sm:px-5 py-3 sm:py-4 text-right font-semibold whitespace-nowrap text-sm sm:text-base">Costo Reale €</th>
-                                <th className="px-3 sm:px-5 py-3 sm:py-4 text-right font-semibold whitespace-nowrap text-sm sm:text-base">Prezzo Online €</th>
-                                <th className="px-3 sm:px-5 py-3 sm:py-4 text-right font-semibold whitespace-nowrap text-sm sm:text-base">Margine %</th>
-                                <th className="px-3 sm:px-5 py-3 sm:py-4 text-right font-semibold whitespace-nowrap text-sm sm:text-base">Qtà Totale</th>
-                                <th className="px-3 sm:px-5 py-3 sm:py-4 text-center font-semibold whitespace-nowrap text-sm sm:text-base">Status</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Prodotto</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Costo Reale</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Prezzo Online</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Margine</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Quantità</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Status</th>
                               </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-gray-100">
                               {Object.entries(analysis)
                                 .filter(([, d]) => d.totalQuantity > 0)
                                 .filter(([product]) => product.toLowerCase().includes(searchQuery.toLowerCase()))
                                 .sort(([, a], [, b]) => a.margin - b.margin)
                                 .map(([product, data]) => (
-                                  <tr key={product} className="border-b hover:bg-gray-50">
-                                    <td className="px-3 sm:px-5 py-3 sm:py-4 font-semibold whitespace-nowrap text-sm sm:text-base">{product}</td>
-                                    <td className="px-3 sm:px-5 py-3 sm:py-4 text-right text-sm sm:text-base">{data.avgRealCost.toFixed(2)}</td>
-                                    <td className="px-3 sm:px-5 py-3 sm:py-4 text-right text-sm sm:text-base">{data.onlinePrice.toFixed(2)}</td>
-                                    <td className={`px-3 sm:px-5 py-3 sm:py-4 text-right font-bold text-sm sm:text-base ${data.margin < 20 ? 'text-red-600' : data.margin < 30 ? 'text-yellow-600' : 'text-green-600'}`}>
-                                      {data.margin.toFixed(1)}%
+                                  <tr key={product} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 font-medium text-gray-800">{product}</td>
+                                    <td className="px-6 py-4 text-gray-700">€ {data.avgRealCost.toFixed(2)}</td>
+                                    <td className="px-6 py-4 font-medium text-blue-600">€ {data.onlinePrice.toFixed(2)}</td>
+                                    <td className="px-6 py-4">
+                                      <span className={`font-bold ${data.margin < 20 ? 'text-red-600' : data.margin < 30 ? 'text-yellow-600' : 'text-green-600'}`}>
+                                        {data.margin.toFixed(1)}%
+                                      </span>
                                     </td>
-                                    <td className="px-3 sm:px-5 py-3 sm:py-4 text-right text-sm sm:text-base">{data.totalQuantity}</td>
-                                    <td className="px-3 sm:px-5 py-3 sm:py-4 text-center text-xs sm:text-sm">
-                                      <span className={`px-2 sm:px-3 py-1 rounded whitespace-nowrap font-medium ${data.margin < 20 ? 'bg-red-100 text-red-700' : data.margin < 30 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
-                                        {data.margin < 20 ? 'Basso' : data.margin < 30 ? 'Medio' : 'Buono'}
+                                    <td className="px-6 py-4 text-gray-700">{data.totalQuantity} pz</td>
+                                    <td className="px-6 py-4">
+                                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${data.margin < 20 ? 'status-bad' : data.margin < 30 ? 'status-ok' : 'status-good'}`}>
+                                        {data.margin < 20 ? 'Basso' : data.margin < 30 ? 'Buono' : 'Ottimo'}
                                       </span>
                                     </td>
                                   </tr>
