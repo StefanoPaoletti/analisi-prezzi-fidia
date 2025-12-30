@@ -62,6 +62,9 @@
             { product: '', quantity: '', price: '', discount: '', vat: '22', freebies: '' }
           ]);
           const [editingInvoice, setEditingInvoice] = useState(null);
+          const [productDropdownOpen, setProductDropdownOpen] = useState({});
+          const [productSearchQuery, setProductSearchQuery] = useState({});
+          const productInputRefs = useRef({});
           
           // Form nota credito
           const [creditDate, setCreditDate] = useState(new Date().toISOString().split('T')[0]);
@@ -197,6 +200,17 @@
             setShippingCost('');
             setInvoiceItems([{ product: '', quantity: '', price: '', discount: '', vat: '22', freebies: '' }]);
           };
+          
+          // Chiudi dropdown prodotti al click esterno
+          useEffect(() => {
+            const handleClickOutside = (e) => {
+              if (!e.target.closest('.relative')) {
+                setProductDropdownOpen({});
+              }
+            };
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+          }, []);
           
           const saveInvoice = async () => {
             const validItems = invoiceItems.filter(i => i.product && i.quantity && i.price);
@@ -819,14 +833,56 @@
                                     />
                                   </td>
                                   <td className="px-3 py-2">
-                                    <select 
-                                      value={item.product} 
-                                      onChange={e => updateInvoiceItem(i, 'product', e.target.value)} 
-                                      className="w-32 sm:w-full px-2 sm:px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                                    >
-                                      <option value="">Seleziona prodotto</option>
-                                      {PRODUCTS.map(p => <option key={p} value={p}>{p}</option>)}
-                                    </select>
+                                    <div className="relative">
+                                      <input
+                                        ref={el => productInputRefs.current[i] = el}
+                                        type="text"
+                                        value={productSearchQuery[i] || item.product || ''}
+                                        onChange={e => {
+                                          setProductSearchQuery({...productSearchQuery, [i]: e.target.value});
+                                          setProductDropdownOpen({...productDropdownOpen, [i]: true});
+                                        }}
+                                        onFocus={() => setProductDropdownOpen({...productDropdownOpen, [i]: true})}
+                                        placeholder="Cerca prodotto..."
+                                        className="w-32 sm:w-full px-2 sm:px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                      />
+                                      {productDropdownOpen[i] && (() => {
+                                        const rect = productInputRefs.current[i]?.getBoundingClientRect();
+                                        return rect ? (
+                                          <div 
+                                            style={{
+                                              position: 'fixed', 
+                                              top: `${rect.bottom + 4}px`, 
+                                              left: `${rect.left}px`,
+                                              width: `${rect.width}px`,
+                                              zIndex: 9999
+                                            }} 
+                                            className="bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                                          >
+                                            {PRODUCTS.filter(p => 
+                                              p.toLowerCase().includes((productSearchQuery[i] || '').toLowerCase())
+                                            ).map(p => (
+                                              <div
+                                                key={p}
+                                                onClick={() => {
+                                                  updateInvoiceItem(i, 'product', p);
+                                                  setProductSearchQuery({...productSearchQuery, [i]: ''});
+                                                  setProductDropdownOpen({...productDropdownOpen, [i]: false});
+                                                }}
+                                                className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                                              >
+                                                {p}
+                                              </div>
+                                            ))}
+                                            {PRODUCTS.filter(p => 
+                                              p.toLowerCase().includes((productSearchQuery[i] || '').toLowerCase())
+                                            ).length === 0 && (
+                                              <div className="px-3 py-2 text-sm text-gray-500">Nessun prodotto trovato</div>
+                                            )}
+                                          </div>
+                                        ) : null;
+                                      })()}
+                                    </div>
                                   </td>
                                   <td className="px-3 py-2">
                                     <input 
