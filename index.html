@@ -70,6 +70,9 @@
           const [showWarningModal, setShowWarningModal] = useState(false);
           const [warningProduct, setWarningProduct] = useState('');
           
+          // Sistema modale unificato
+          const [modal, setModal] = useState({ show: false, type: '', title: '', message: '' });
+          
           // Form nota credito
           const [creditDate, setCreditDate] = useState(new Date().toISOString().split('T')[0]);
           const [creditAmount, setCreditAmount] = useState('');
@@ -137,7 +140,7 @@
               console.log('✅ Dati caricati con successo');
             } catch (error) {
               console.error('❌ Errore caricamento completo:', error);
-              alert('Errore nel caricamento dei dati: ' + error.message);
+              setModal({ show: true, type: 'error', title: 'Errore caricamento', message: error.message });
             }
             setIsLoading(false);
           };
@@ -165,14 +168,14 @@
               return true;
             } catch (error) {
               console.error(error);
-              alert('Errore salvataggio: ' + error.message);
+              setModal({ show: true, type: 'error', title: 'Errore salvataggio', message: error.message });
               setIsLoading(false);
               return false;
             }
           };
           
           const handleLogin = () => {
-            if (!password) return alert('Inserisci la password!');
+            if (!password) return setModal({ show: true, type: 'warning', title: 'Password richiesta', message: 'Inserisci la password per accedere.' });
             localStorage.setItem('fidiaAppPassword', password);
             setSavedPassword(password);
             setIsAuthenticated(true);
@@ -218,7 +221,7 @@
           
           const saveInvoice = async () => {
             const validItems = invoiceItems.filter(i => i.product && i.quantity && i.price);
-            if (!invoiceDate || !invoiceNumber || validItems.length === 0) return alert('Compila tutti i campi obbligatori!');
+            if (!invoiceDate || !invoiceNumber || validItems.length === 0) return setModal({ show: true, type: 'warning', title: 'Campi obbligatori', message: 'Compila data, numero fattura e almeno un prodotto con quantità e prezzo.' });
             
             const shipping = parseFloat(shippingCost) || 0;
             const year = new Date(invoiceDate).getFullYear().toString();
@@ -243,13 +246,13 @@
             const success = await saveToGoogleSheets('saveInvoice', newInvoice);
             if (success) {
               resetForm();
-              alert('Fattura salvata con successo!');
+              setModal({ show: true, type: 'success', title: 'Fattura salvata', message: 'La fattura è stata salvata con successo!' });
             }
           };
           
           const updateInvoice = async () => {
             const validItems = invoiceItems.filter(i => i.product && i.quantity && i.price);
-            if (!invoiceDate || !invoiceNumber || validItems.length === 0) return alert('Compila tutti i campi obbligatori!');
+            if (!invoiceDate || !invoiceNumber || validItems.length === 0) return setModal({ show: true, type: 'warning', title: 'Campi obbligatori', message: 'Compila data, numero fattura e almeno un prodotto con quantità e prezzo.' });
             
             const shipping = parseFloat(shippingCost) || 0;
             const year = new Date(invoiceDate).getFullYear().toString();
@@ -274,7 +277,7 @@
             const success = await saveToGoogleSheets('updateInvoice', updatedInvoice);
             if (success) {
               resetForm();
-              alert('Fattura aggiornata con successo!');
+              setModal({ show: true, type: 'success', title: 'Fattura aggiornata', message: 'Le modifiche sono state salvate con successo!' });
             }
           };
           
@@ -312,7 +315,7 @@
           };
           
           const saveCreditNote = async () => {
-            if (!creditAmount || parseFloat(creditAmount) <= 0) return alert('Inserisci un importo valido');
+            if (!creditAmount || parseFloat(creditAmount) <= 0) return setModal({ show: true, type: 'warning', title: 'Importo non valido', message: 'Inserisci un importo maggiore di zero.' });
             const year = new Date(creditDate).getFullYear();
             const newNote = {
               id: Date.now(),
@@ -324,7 +327,7 @@
             if (success) {
               setCreditAmount('');
               setCreditDate(new Date().toISOString().split('T')[0]);
-              alert('Nota di credito salvata!');
+              setModal({ show: true, type: 'success', title: 'Nota salvata', message: 'La nota di credito è stata salvata con successo!' });
             }
           };
           
@@ -359,7 +362,7 @@
             const el = document.getElementById('dashboard-table');
             const searchBar = document.getElementById('search-bar');
             const infoIcons = document.querySelectorAll('.info-icon');
-            if (!el) return alert('Errore: tabella non trovata');
+            if (!el) return setModal({ show: true, type: 'error', title: 'Errore export', message: 'Impossibile trovare la tabella da esportare.' });
             
             // Nascondi la barra di ricerca e le icone info temporaneamente
             if (searchBar) searchBar.style.display = 'none';
@@ -375,7 +378,7 @@
               link.href = canvas.toDataURL('image/png');
               link.click();
             } catch (err) {
-              alert('Errore esportazione immagine');
+              setModal({ show: true, type: 'error', title: 'Errore export', message: 'Si è verificato un errore durante l\'esportazione dell\'immagine.' });
             } finally {
               // Mostra di nuovo la barra di ricerca e le icone info
               if (searchBar) searchBar.style.display = 'block';
@@ -1139,7 +1142,7 @@
                       <div className="flex gap-3">
                         <button
                           onClick={async () => {
-                            if (!newProductName || !newProductPrice) return alert('Compila tutti i campi');
+                            if (!newProductName || !newProductPrice) return setModal({ show: true, type: 'warning', title: 'Campi obbligatori', message: 'Inserisci sia il nome che il prezzo del prodotto.' });
                             setIsLoading(true);
                             try {
                               const action = editingProduct ? 'updateProduct' : 'addProduct';
@@ -1156,7 +1159,7 @@
                               setNewProductPrice('');
                               setEditingProduct(null);
                             } catch (err) {
-                              alert('Errore: ' + err.message);
+                              setModal({ show: true, type: 'error', title: 'Errore prodotto', message: err.message });
                             }
                             setIsLoading(false);
                           }}
@@ -1237,7 +1240,7 @@
                                     await loadFromGoogleSheets();
                                   } catch (err) {
                                     console.error('Errore eliminazione:', err);
-                                    alert('Errore: ' + err.message);
+                                    setModal({ show: true, type: 'error', title: 'Errore eliminazione', message: err.message });
                                   }
                                   setIsLoading(false);
                                 }}
@@ -1284,6 +1287,45 @@
                         className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                       >
                         Ho capito
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Sistema modale unificato (error, warning, success) */}
+              {modal.show && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
+                  <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        {modal.type === 'error' && (
+                          <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                          </svg>
+                        )}
+                        {modal.type === 'warning' && (
+                          <svg className="w-12 h-12 text-amber-500" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.05 4.575a1.575 1.575 0 1 0-3.15 0v3m3.15-3v-1.5a1.575 1.575 0 0 1 3.15 0v1.5m-3.15 0 .075 5.925m3.075.75V4.575m0 0a1.575 1.575 0 0 1 3.15 0V15M6.9 7.575a1.575 1.575 0 1 0-3.15 0v8.175a6.75 6.75 0 0 0 6.75 6.75h2.018a5.25 5.25 0 0 0 3.712-1.538l1.732-1.732a5.25 5.25 0 0 0 1.538-3.712l.003-2.024a.668.668 0 0 1 .198-.471 1.575 1.575 0 1 0-2.228-2.228 3.818 3.818 0 0 0-1.12 2.687M6.9 7.575V12m6.27 4.318A4.49 4.49 0 0 1 16.35 15m.002 0h-.002" />
+                          </svg>
+                        )}
+                        {modal.type === 'success' && (
+                          <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">{modal.title}</h3>
+                        <p className="text-gray-700">{modal.message}</p>
+                      </div>
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                      <button
+                        onClick={() => setModal({ show: false, type: '', title: '', message: '' })}
+                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                      >
+                        OK
                       </button>
                     </div>
                   </div>
